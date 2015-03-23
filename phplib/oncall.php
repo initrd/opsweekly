@@ -59,12 +59,21 @@ function printOnCallNotifications($on_call_name, $start, $end, $oncall_start, $o
     $n_total = count($notifications);
     $timesaver = false;
 
+    sort($notifications);
+
     foreach ($notifications as $n) {
         # Add a row that lets the user potentially stop halfway and come back later
         if ($n_num >= ($n_total / 2) && !$timesaver) {
             $timesaver = true;
             $html .= "<tr><td colspan='5'><div class='well'><b>Hey!</b> You made it halfway. If you want you can save up to here and continue later.";
             $html .= "<button class='btn btn-primary pull-right' type='submit'>Save draft</button></div></td></tr>";
+        }
+
+        $day = date("Y-m-d", $n['time']);
+        if ($day > $prev_day) {
+            $pretty_date = date("l jS F", $n['time']);
+            $html .= "<tr><td colspan='5'><div class='well'><h4>{$pretty_date}</h4></div></td></tr>";
+            $prev_day = $day;
         }
 
         # Look for a previous copy of this alert

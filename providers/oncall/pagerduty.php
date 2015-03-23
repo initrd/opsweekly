@@ -87,13 +87,25 @@ function getOnCallNotifications($name, $global_config, $team_config, $start, $en
 	    foreach ($incidents->incidents as $incident) {
 		$time = strtotime($incident->created_on);
 
-		// try to determine and set the service
-		if (isset($incident->trigger_summary_data->subject)) {
-		  $service = $incident->trigger_summary_data->subject;
-		} elseif (isset($incident->trigger_summary_data->SERVICEDESC)) {
-		  $service = $incident->trigger_summary_data->SERVICEDESC;
-		} else {
-		  $service = "unknown";
+		// try to determine and set the host, service and state
+		if ($incident->trigger_summary_data->pd_nagios_object == "service") {
+		  if (isset($incident->trigger_summary_data->SERVICEDESC)) {
+			$service = $incident->trigger_summary_data->SERVICEDESC;
+		  } else {
+			$service = "unknown";
+		  }
+		  if (isset($incident->trigger_summary_data->SERVICESTATE)) {
+			$state = $incident->trigger_summary_data->SERVICESTATE;
+		  } else {
+			$state = "CRITICAL";
+		  }
+		} else if ($incident->trigger_summary_data->pd_nagios_object == "host") {
+		  $service = "PING";
+		  if (isset($incident->trigger_summary_data->HOSTSTATE)) {
+			$state = $incident->trigger_summary_data->HOSTSTATE;
+		  } else {
+			$state = "DOWN";
+		  }
 		}
 
 		$output = $incident->trigger_details_html_url;
@@ -110,11 +122,12 @@ function getOnCallNotifications($name, $global_config, $team_config, $start, $en
 		if (isset($incident->trigger_summary_data->HOSTNAME)) {
 		  $hostname = $incident->trigger_summary_data->HOSTNAME;
 		} else {
-		  // fallback is to just say it was pagerduty that sent it in
-		  $hostname = "Pagerduty";
+		  // fallback - pick service name from incident->service->name
+		  $hostname = $incident->trigger_summary_data->HOSTNAME;
+		  $service = "CRITICAL";
 		}
 
-		$notifications[] = array("time" => $time, "hostname" => $hostname, "service" => $service, "output" => $output, "state" => "CRITICAL");
+		$notifications[] = array("time" => $time, "hostname" => $hostname, "service" => $service, "output" => $output, "state" => $state);
 	    }
         } while ($running_total < $incidents->total);
       }

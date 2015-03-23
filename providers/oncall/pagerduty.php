@@ -123,7 +123,7 @@ function getOnCallNotifications($name, $global_config, $team_config, $start, $en
 		  $hostname = $incident->trigger_summary_data->HOSTNAME;
 		} else {
 		  // fallback - pick service name from incident->service->name
-		  $hostname = $incident->trigger_summary_data->HOSTNAME;
+		  $hostname = $incident->service->name;
 		  $service = "CRITICAL";
 		}
 

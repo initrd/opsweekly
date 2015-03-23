@@ -103,7 +103,9 @@ function setDateToLastWeek() {
 
         <?php
             foreach ($results as $n) {
-                echo formatOnCallRowForPrint($n);
+                if ($n['tag']) {
+                    echo formatOnCallRowForPrint($n);
+                }
             }
         echo "</tbody></table>";
         } else {

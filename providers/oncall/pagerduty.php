@@ -108,21 +108,27 @@ function getOnCallNotifications($name, $global_config, $team_config, $start, $en
 		  }
 		}
 
-		$output = $incident->trigger_details_html_url;
-		$output .= "\n";
+		// add just service or host output if present, failing which
+		// add url and other information from trigger_summary_data
+		// https://support.pagerduty.com/hc/en-us/articles/202829610
+		if (isset($incident->trigger_summary_data->pd_description)) {
+		  $output = $incident->trigger_summary_data->pd_description;
+		} else {
+		  $output = $incident->trigger_details_html_url;
+		  $output .= "\n";
 
 		// Add to the output all the trigger_summary_data info
-		foreach ($incident->trigger_summary_data as $key => $key_data) {
-		  $output .= "$key: $key_data\n";
+		  foreach ($incident->trigger_summary_data as $key => $key_data) {
+		    $output .= "$key: $key_data\n";
+		  }
+		  $output .= $incident->url;
 		}
-
-		$output .= $incident->url;
 
 		// try to determine the hostname
 		if (isset($incident->trigger_summary_data->HOSTNAME)) {
 		  $hostname = $incident->trigger_summary_data->HOSTNAME;
 		} else {
-		  // fallback - pick service name from incident->service->name
+		// fallback - pick service name from incident->service->name
 		  $hostname = $incident->service->name;
 		  $service = "CRITICAL";
 		}

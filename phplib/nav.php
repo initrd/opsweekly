@@ -49,9 +49,14 @@
                 <i class="icon-time icon-white"></i> Timezone<b class="caret"></b>
             </a>
             <ul class="dropdown-menu" role="menu" aria-labelledby="dTZ">
-                <li><a tabindex="-1" href="set_locale.php?l=UK">London, UK</a></li>
-                <li><a tabindex="-1" href="set_locale.php?l=ET">Brooklyn, NY</a></li>
-                <li><a tabindex="-1" href="set_locale.php?l=PT">San Francisco, CA</a></li>
+            <?php
+                global $cities;
+                foreach ($cities as $TZ=>$city) {
+            ?>
+                <li><a tabindex="-1" href="set_locale.php?l=<?php print $TZ ?>"><?php print $city ?></a></li>
+            <?php
+                }
+            ?>
             </ul>
         </li>
         <li class="dropdown">

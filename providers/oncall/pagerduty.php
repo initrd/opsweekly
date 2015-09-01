@@ -177,16 +177,23 @@ function doPagerdutyAPICall($path, $parameters, $pagerduty_baseurl, $pagerduty_u
     return file_get_contents($pagerduty_baseurl . $path . $params, false, $context);
 }
 
-function whoIsOnCall($schedule_id, $time = null) {
+function whoIsOnCall($global_config, $team_config, $time = null) {
+    $base_url = $global_config['base_url'];
+    $username = $global_config['username'];
+    $password = $global_config['password'];
+    $apikey = $global_config['apikey'];
+    $schedule_id = $team_config['pagerduty_schedule_id'];
 
-    $until = $since = date('c', isset($time) ? $time : time());
+    date_default_timezone_set('UTC');
+
+    $until = $since = date('Y-m-d\TH:i:s\Z', isset($time) ? $time : time());
     $parameters = array(
         'since' => $since,
         'until' => $until,
         'overflow' => 'true',
     );
 
-    $json = doPagerdutyAPICall("/schedules/{$schedule_id}/entries", $parameters);
+    $json = doPagerdutyAPICall("/schedules/{$schedule_id}/entries", $parameters, $base_url, $username, $password, $apikey);
 
     if (false === ($scheddata = json_decode($json))) {
         return false;

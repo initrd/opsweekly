@@ -14,7 +14,7 @@ $oncall_start = $oncall_period[0];
 $oncall_end = $oncall_period[1];
 
 
-$page_title = getTeamName() . " Weekly Updates - Add new update";
+$page_title = getTeamName() . " Shift Updates - Add new update";
 include_once('phplib/header.php');
 include_once('phplib/nav.php')
 
@@ -37,16 +37,16 @@ include_once('phplib/nav.php')
         // See if a report was already submitted for this week. Doesn't matter, just a heads up. 
         if ($oncall_user = guessPersonOnCall($oncall_start, $oncall_end)) {
             if ($oncall_user == $my_username) {
-                echo "<p>You have already submitted a report this week, but you can update or add to it by clicking the button below</p>";
+                echo "<p>You have already submitted a report this shift, but you can update or add to it by clicking the button below</p>";
             } else {
                 echo "<p>An on call report has already been submitted by someone else this week, but you can update or add to it by clicking the button below</p>";
             }
         } else {
-            echo "<p>Were you on call this week? Click button to load notification report</p>";
+            echo "<p>On call this shift? Click button to load notification report</p>";
         }
         ?>
         <button type="button" class="btn btn-danger" data-loading-text="Generating On Call Summary..." 
-            onclick="$(this).button('loading'); $('.notifications').load('generate_oncall_survey.php?date=<?php echo urlencode($time_requested) ?>', function() { $('#on-call-question').fadeOut('fast') });">I was on call</button>
+            onclick="$(this).button('loading'); $('.notifications').load('generate_oncall_survey.php?date=<?php echo urlencode($time_requested) ?>', function() { $('#on-call-question').fadeOut('fast') });">Fetch alerts</button>
         </div>
         <div class="notifications" id="notifications"></div>
         <p></p><br />

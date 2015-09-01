@@ -50,8 +50,8 @@ function printOnCallNotifications($on_call_name, $start, $end, $oncall_start, $o
     // Data collection complete. Time to render the form items for report submission. 
 
     // First, we populate the field with the on call ranges so the report is saved with the correct timestamp
-    $html = "<input type='hidden' name='oncall[range_start]' value='{$range_start}'>";
-    $html .= "<input type='hidden' name='oncall[range_end]' value='{$range_end}'>";
+    $html = "<input type='hidden' name='oncall[range_start]' value='{$range_start}' />";
+    $html .= "<input type='hidden' name='oncall[range_end]' value='{$range_end}' />";
 
     $timezone = getTimezoneSetting();
     date_default_timezone_set($timezone);
@@ -80,9 +80,12 @@ function printOnCallNotifications($on_call_name, $start, $end, $oncall_start, $o
         if ($previous_data = checkForPreviousOnCallItem( generateOnCallAlertID($n['time'], $n['hostname'], $n['service']) )) {
             $previous_notes = $previous_data['notes'];
             $previous_tag = $previous_data['tag'];
+            $previous_oncall = $previous_data['oncall'];
         } else {
             $previous_notes = null;
             $previous_tag = null;
+            $oncall = getWhoIsOnCall();
+            $previous_oncall = $oncall['email'];
         }
 
         $pretty_date = date("D d M H:i:s T", $n['time']);
@@ -91,11 +94,11 @@ function printOnCallNotifications($on_call_name, $start, $end, $oncall_start, $o
         $html .= "<td><span class='label label-{$nagios_state_to_badge[$n['state']]}'>{$n['state']}</span></td>";
 
         # Need to populate all the information into hidden fields so we get all the data back nicely when the form is submitted
-        $html .= "<input type='hidden' name='oncall[notifications][not_{$n_num}][hostname]' value='{$n['hostname']}'>";
-        $html .= "<input type='hidden' name='oncall[notifications][not_{$n_num}][output]' value='{$n['output']}'>";
-        $html .= "<input type='hidden' name='oncall[notifications][not_{$n_num}][time]' value='{$n['time']}'>";
-        $html .= "<input type='hidden' name='oncall[notifications][not_{$n_num}][state]' value='{$n['state']}'>";
-        $html .= "<input type='hidden' name='oncall[notifications][not_{$n_num}][service]' value='{$n['service']}'>";
+        $html .= "<input type='hidden' name='oncall[notifications][not_{$n_num}][hostname]' value='{$n['hostname']}' />";
+        $html .= "<input type='hidden' name='oncall[notifications][not_{$n_num}][output]' value='{$n['output']}' />";
+        $html .= "<input type='hidden' name='oncall[notifications][not_{$n_num}][time]' value='{$n['time']}' />";
+        $html .= "<input type='hidden' name='oncall[notifications][not_{$n_num}][state]' value='{$n['state']}' />";
+        $html .= "<input type='hidden' name='oncall[notifications][not_{$n_num}][service]' value='{$n['service']}' />";
         $html .= "</tr>";
         $html .= "<tr><td colspan='2'>";
         # Dropdown that lets the user choose a tag for the alert
@@ -106,11 +109,54 @@ function printOnCallNotifications($on_call_name, $start, $end, $oncall_start, $o
         }
         $html .= "</select></td>";
         $html .= "<td colspan='2'><div class='control-group'><label class='control-label'><b>Notes:</b> </label>
-            <div class='controls'><input type='text' name='oncall[notifications][not_{$n_num}][notes]' class='input-xxlarge' placeholder='Notes' value='{$previous_notes}'></div></div></td>";
-        $html .= "<td><input class='bulk-check' data-num='{$n_num}' type='checkbox'></td></tr>";
+            <div class='controls'><input type='text' name='oncall[notifications][not_{$n_num}][notes]' class='input-xxlarge' placeholder='Notes' value='{$previous_notes}' /></div></div>
+            <input type='hidden' name='oncall[notifications[not{$n_num}][oncall]' value='{$previous_oncall}' /></td>";
+        $html .= "<td><input class='bulk-check' data-num='{$n_num}' type='checkbox' /></td></tr>";
         $n_num++;
     }
     date_default_timezone_set("UTC");
 
     return $html; 
+}
+
+function getWhoIsOnCall($time = null) {
+    // Call the correct provider
+    $oncall_config = getTeamConfig('oncall');
+    if (!$oncall_config) {
+        return '<div class="alert alert-error">Something terrible has happened. This team doesn\'t have on call enabled!</div>';
+    }
+
+    $provider_name = $oncall_config['provider'];
+    logline("whoIsOnCall has started, looking for provider {$provider_name}. ");
+
+    // Get the global configuration for the provider
+    $provider_config = getOnCallProvider($provider_name);
+    $provider_global_options = $provider_config['options'];
+
+    // Get the per team options for the provider
+    $provider_team_options = getTeamOnCallConfig('provider_options');
+
+    // Hopefully the user entered a valid oncall provider name...
+    if (!$provider_config) {
+        return '<div class="alert alert-error">Something terrible has happened. We cannot find an on-call provider named "'. $provider_name .'"</div>';
+    }
+
+    logline("whoIsOnCall is loading {$provider_config['lib']}");
+    // Load the provider specified.
+    include_once "{$provider_config['lib']}";
+
+    logline("Firing whoIsOnCall...");
+    // And now ask for the notifications
+    $notifications = whoIsOnCall($provider_global_options, $provider_team_options, $time);
+
+    // If the returned data wasn't an array, something is wrong...
+    if (!is_array($notifications)) {
+        logline("whoIsOnCall didn't return an array! Returned data was {$notifications} ");
+        return '<div class="alert alert-error">The oncall provider failed. It returned: <pre>'. $notifications .'</pre></div>';
+    } else {
+        logline("whoIsOnCall returned an array containing ". count($notifications) . " notifications");
+    }
+
+    return $notifications;
+
 }

@@ -10,17 +10,22 @@ $start_ts = $start_end[0];
 $end_ts = $start_end[1];
 
 // Get the alerts with timezone data so it matches the users expectations
-$oncall_start_end = getOnCallWeekRangeWithTZ($time_requested);
-$oncall_start_ts = $oncall_start_end[0];
-$oncall_end_ts = $oncall_start_end[1];
+#$oncall_start_end = getOnCallWeekRangeWithTZ($time_requested);
+#$oncall_start_ts = $oncall_start_end[0];
+#$oncall_end_ts = $oncall_start_end[1];
+
+$oncall_start_end = getWhoIsOnCall();
+$oncall_start_ts = $oncall_start_end['start'];
+$oncall_end_ts = $oncall_start_end['end'];
 
 $timezone = getTimezoneSetting();
 date_default_timezone_set($timezone);
+
 ?>
 
 
 <form action="<?php echo $ROOT_URL; ?>/add_oncall_weekly.php" method="POST" class="form-horizontal">
-    <h3>Alerts received this week (<?php echo date("D jS F H:i T", $oncall_start_ts) . " - " . date("D jS F H:i T", $oncall_end_ts) ?>)</h3>
+    <h3>Alerts received this shift (<?php echo date("D jS F H:i T", $oncall_start_ts) . " - " . date("D jS F H:i T", $oncall_end_ts) ?>)</h3>
     <table class="table table-striped table-bordered table-hover">
     <thead>
         <tr>
